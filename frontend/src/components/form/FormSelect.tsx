@@ -1,4 +1,4 @@
-import { useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { AppSelect } from "@/components/shared";
 
 interface FormSelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "name"> {
@@ -8,7 +8,23 @@ interface FormSelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElem
   placeholder?: string;
 }
 
-export function FormSelect({ name, ...props }: FormSelectProps) {
-  const { register } = useFormContext();
-  return <AppSelect {...register(name)} {...props} />;
+export function FormSelect({ name, label, options, placeholder, ...props }: FormSelectProps) {
+  const { control } = useFormContext();
+
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => (
+        <AppSelect
+          label={label}
+          options={options}
+          placeholder={placeholder}
+          error={fieldState.error?.message}
+          {...field}
+          {...props}
+        />
+      )}
+    />
+  );
 }
