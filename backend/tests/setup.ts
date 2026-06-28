@@ -1,0 +1,9 @@
+process.env.NODE_ENV = 'test';
+process.env.PORT = '5001';
+process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/job_automation_test';
+process.env.JWT_SECRET = 'test-jwt-secret-'.padEnd(32, 'x');
+process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-'.padEnd(32, 'x');
+process.env.JWT_ACCESS_EXPIRES_IN = '15m';
+process.env.JWT_REFRESH_EXPIRES_IN = '7d';
+process.env.CORS_ORIGIN = 'http://localhost:3000';
+process.env.LOG_LEVEL = 'silent';

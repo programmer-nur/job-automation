@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JobStatus {
+  SAVED
+  READY_TO_APPLY
+  APPLIED
+  INTERVIEWING
+  OFFER
+  REJECTED
+  WITHDRAWN
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  VIEWED
+  INTERVIEWING
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String   @id @default(uuid()) @map("id")
+  email         String   @unique @map("email")
+  passwordHash  String   @map("password_hash")
+  name          String?  @map("name")
+  role          UserRole @default(USER) @map("role")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  jobs            Job[]
+  applications    Application[]
+  resumeVersions  ResumeVersion[]
+  coverLetters    CoverLetter[]
+  tasks           Task[]
+  notifications   Notification[]
+  aiRequests      AIRequest[]
+  auditLogs       AuditLog[]
+  refreshTokens   RefreshToken[]
+  userSetting     UserSetting?
+  integrations    Integration[]
+
+  @@map("users")
+}
+
+model Job {
+  id             String    @id @default(uuid()) @map("id")
+  userId         String    @map("user_id")
+  title          String    @map("title")
+  company        String    @map("company")
+  location       String?   @map("location")
+  description    String?   @map("description")
+  url            String?   @map("url")
+  salaryRange    String?   @map("salary_range")
+  jobType        String?   @map("job_type")
+  source         String?   @map("source")
+  status         JobStatus @default(SAVED) @map("status")
+  matchScore     Int?      @map("match_score")
+  isFavorite     Boolean   @default(false) @map("is_favorite")
+  metadata       Json?     @map("metadata")
+  appliedAt      DateTime? @map("applied_at")
+  trelloCardId   String?   @map("trello_card_id")
+  sheetRowId     String?   @map("sheet_row_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  applications Application[]
+  tasks        Task[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, company])
+  @@index([title, company])
+  @@map("jobs")
+}
+
+model Application {
+  id             String              @id @default(uuid()) @map("id")
+  userId         String              @map("user_id")
+  jobId          String              @map("job_id")
+  status         ApplicationStatus   @default(DRAFT) @map("status")
+  resumeId       String?             @map("resume_id")
+  coverLetterId  String?             @map("cover_letter_id")
+  notes          String?             @map("notes")
+  followUpDate   DateTime?           @map("follow_up_date")
+  submittedAt    DateTime?           @map("submitted_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  deletedAt      DateTime?           @map("deleted_at")
+
+  user        User         @relation(fields: [userId], references: [id])
+  job         Job          @relation(fields: [jobId], references: [id])
+  resume      ResumeVersion? @relation("ApplicationResume", fields: [resumeId], references: [id])
+  coverLetter CoverLetter?  @relation("ApplicationCoverLetter", fields: [coverLetterId], references: [id])
+  tasks       Task[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([jobId])
+  @@map("applications")
+}
+
+model ResumeVersion {
+  id             String   @id @default(uuid()) @map("id")
+  userId         String   @map("user_id")
+  version        Int      @default(1) @map("version")
+  title          String?  @map("title")
+  content        String   @map("content")
+  fileUrl        String?  @map("file_url")
+  matchScore     Int?     @map("match_score")
+  isActive       Boolean  @default(false) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  user          User          @relation(fields: [userId], references: [id])
+  applications  Application[] @relation("ApplicationResume")
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@map("resume_versions")
+}
+
+model CoverLetter {
+  id             String   @id @default(uuid()) @map("id")
+  userId         String   @map("user_id")
+  jobId          String?  @map("job_id")
+  content        String   @map("content")
+  tone           String?  @map("tone")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  applications Application[] @relation("ApplicationCoverLetter")
+
+  @@index([userId])
+  @@index([jobId])
+  @@map("cover_letters")
+}
+
+model Task {
+  id            String    @id @default(uuid()) @map("id")
+  userId        String    @map("user_id")
+  jobId         String?   @map("job_id")
+  applicationId String?   @map("application_id")
+  title         String    @map("title")
+  description   String?   @map("description")
+  dueDate       DateTime? @map("due_date")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  user        User         @relation(fields: [userId], references: [id])
+  job         Job?         @relation(fields: [jobId], references: [id])
+  application Application? @relation(fields: [applicationId], references: [id])
+
+  @@index([userId])
+  @@index([userId, dueDate])
+  @@index([jobId])
+  @@index([applicationId])
+  @@map("tasks")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @map("id")
+  userId    String   @map("user_id")
+  title     String   @map("title")
+  message   String   @map("message")
+  type      String   @map("type")
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AIRequest {
+  id            String   @id @default(uuid()) @map("id")
+  userId        String   @map("user_id")
+  type          String   @map("type")
+  prompt        String   @map("prompt")
+  response      String?  @map("response")
+  model         String   @map("model")
+  tokensUsed    Int?     @map("tokens_used")
+  durationMs    Int?     @map("duration_ms")
+  status        String   @default("pending") @map("status")
+  errorMessage  String?  @map("error_message")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([userId, status])
+  @@map("ai_requests")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @map("id")
+  userId      String?  @map("user_id")
+  action      String   @map("action")
+  entity      String?  @map("entity")
+  entityId    String?  @map("entity_id")
+  oldData     Json?    @map("old_data")
+  newData     Json?    @map("new_data")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @map("id")
+  userId    String   @map("user_id")
+  token     String   @unique @map("token")
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false) @map("revoked")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model UserSetting {
+  id                String   @id @default(uuid()) @map("id")
+  userId            String   @unique @map("user_id")
+  theme             String?  @map("theme")
+  timezone          String?  @map("timezone")
+  language          String?  @map("language")
+  defaultResumeId   String?  @map("default_resume_id")
+  emailNotifications Boolean @default(true) @map("email_notifications")
+  trelloEnabled     Boolean  @default(false) @map("trello_enabled")
+  googleSyncEnabled Boolean  @default(false) @map("google_sync_enabled")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_settings")
+}
+
+model Integration {
+  id              String    @id @default(uuid()) @map("id")
+  userId          String    @map("user_id")
+  type            String    @map("type")
+  status          String    @default("disconnected") @map("status")
+  config          Json?     @map("config")
+  lastSyncAt      DateTime? @map("last_sync_at")
+  lastSyncStatus  String?   @map("last_sync_status")
+  lastSyncMessage String?   @map("last_sync_message")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("integrations")
+}
