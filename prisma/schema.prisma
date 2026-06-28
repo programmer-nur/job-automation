@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum JobStatus {
+  NEW
+  REVIEWING
+  READY_TO_APPLY
+  APPLIED
+  FOLLOW_UP
+  INTERVIEW
+  OFFER
+  REJECTED
+  CLOSED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum WorkplaceType {
+  REMOTE
+  HYBRID
+  ONSITE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskType {
+  FOLLOW_UP
+  INTERVIEW
+  DOCUMENT
+  REVIEW
+  CUSTOM
+}
+
+enum NotificationType {
+  EMAIL
+  IN_APP
+  PUSH
+}
+
+enum AIRequestType {
+  JOB_PARSE
+  MATCH_SCORE
+  TAILOR_RESUME
+  COVER_LETTER
+  INTERVIEW_PREP
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  IMPORT
+  EXPORT
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String   @map("password_hash")
+  avatarUrl    String?  @map("avatar_url")
+  role         UserRole @default(USER)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  jobs           Job[]
+  applications   Application[]
+  resumeVersions ResumeVersion[]
+  coverLetters   CoverLetter[]
+  tasks          Task[]
+  notifications  Notification[]
+  aiRequests     AIRequest[]
+  auditLogs      AuditLog[]
+  userSettings   UserSetting?
+  refreshTokens  RefreshToken[]
+
+  @@map("users")
+}
+
+model Job {
+  id                 String         @id @default(uuid())
+  userId             String         @map("user_id")
+  company            String
+  role               String
+  location           String?
+  employmentType     EmploymentType? @map("employment_type")
+  workplaceType      WorkplaceType?  @map("workplace_type")
+  salaryMin          Int?            @map("salary_min")
+  salaryMax          Int?            @map("salary_max")
+  currency           String?
+  source             String?
+  jobUrl             String?         @map("job_url")
+  description        String?
+  requirements       String?
+  benefits           String?
+  experienceRequired String?         @map("experience_required")
+  education          String?
+  matchScore         Float?          @map("match_score")
+  status             JobStatus       @default(NEW)
+  priority           Priority        @default(MEDIUM)
+  isFavorite         Boolean         @default(false) @map("is_favorite")
+  trelloCardId       String?         @map("trello_card_id")
+  sheetRowId         String?         @map("sheet_row_id")
+  metadata           Json?
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  deletedAt          DateTime?       @map("deleted_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  application  Application?
+  jobSkills    JobSkill[]
+  aiRequests   AIRequest[]
+  coverLetters CoverLetter[]
+  auditLogs    AuditLog[]
+
+  @@unique([jobUrl, userId])
+  @@index([userId])
+  @@index([status])
+  @@index([company])
+  @@index([matchScore])
+  @@index([createdAt])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([company, role])
+  @@map("jobs")
+}
+
+model JobSkill {
+  id         String   @id @default(uuid())
+  jobId      String   @map("job_id")
+  skill      String
+  category   String?
+  confidence Float?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@index([jobId])
+  @@map("job_skills")
+}
+
+model Application {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  jobId           String    @unique @map("job_id")
+  resumeVersionId String?   @map("resume_version_id")
+  coverLetterId   String?   @map("cover_letter_id")
+  status          JobStatus @default(APPLIED)
+  appliedAt       DateTime? @map("applied_at")
+  followUpDate    DateTime? @map("follow_up_date")
+  interviewDate   DateTime? @map("interview_date")
+  offerDate       DateTime? @map("offer_date")
+  rejectionDate   DateTime? @map("rejection_date")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  job          Job           @relation(fields: [jobId], references: [id])
+  resumeVersion ResumeVersion? @relation(fields: [resumeVersionId], references: [id])
+  coverLetter  CoverLetter?  @relation(fields: [coverLetterId], references: [id])
+  tasks        Task[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([userId, status])
+  @@index([jobId, createdAt])
+  @@map("applications")
+}
+
+model ResumeVersion {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  targetRole  String?  @map("target_role")
+  storageUrl  String?  @map("storage_url")
+  atsScore    Float?   @map("ats_score")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  applications Application[]
+
+  @@index([userId])
+  @@map("resume_versions")
+}
+
+model CoverLetter {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  jobId        String?  @map("job_id")
+  content      String?
+  storageUrl   String?  @map("storage_url")
+  createdByAi  Boolean  @default(false) @map("created_by_ai")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  job          Job?          @relation(fields: [jobId], references: [id])
+  applications Application[]
+
+  @@index([userId])
+  @@map("cover_letters")
+}
+
+model Task {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  applicationId String?  @map("application_id")
+  type          TaskType @default(CUSTOM)
+  title         String
+  description   String?
+  dueDate       DateTime? @map("due_date")
+  completed     Boolean  @default(false)
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  application  Application?  @relation(fields: [applicationId], references: [id])
+  notifications Notification[]
+
+  @@index([userId])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String           @map("user_id")
+  taskId      String?          @map("task_id")
+  type        NotificationType @default(IN_APP)
+  title       String
+  message     String?
+  isRead      Boolean          @default(false) @map("is_read")
+  scheduledAt DateTime?        @map("scheduled_at")
+  sentAt      DateTime?        @map("sent_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  user User  @relation(fields: [userId], references: [id])
+  task Task? @relation(fields: [taskId], references: [id])
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model AIRequest {
+  id               String        @id @default(uuid())
+  userId           String        @map("user_id")
+  jobId            String?       @map("job_id")
+  provider         String
+  type             AIRequestType
+  promptTokens     Int?          @map("prompt_tokens")
+  completionTokens Int?          @map("completion_tokens")
+  cost             Float?
+  status           String
+  response         Json?
+  responseTimeMs   Int?          @map("response_time_ms")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  user User  @relation(fields: [userId], references: [id])
+  job  Job?  @relation(fields: [jobId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("ai_requests")
+}
+
+model AuditLog {
+  id           String      @id @default(uuid())
+  userId       String?     @map("user_id")
+  jobId        String?     @map("job_id")
+  entity       String
+  entityId     String?     @map("entity_id")
+  action       AuditAction
+  previousData Json?       @map("previous_data")
+  newData      Json?       @map("new_data")
+  ipAddress    String?     @map("ip_address")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+  job  Job?  @relation(fields: [jobId], references: [id])
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+model UserSetting {
+  id                String  @id @default(uuid())
+  userId            String  @unique @map("user_id")
+  theme             String  @default("system")
+  timezone          String  @default("UTC")
+  language          String  @default("en")
+  defaultResumeId   String? @map("default_resume_id")
+  emailNotifications Boolean @default(true) @map("email_notifications")
+  trelloEnabled     Boolean @default(false) @map("trello_enabled")
+  googleSyncEnabled Boolean @default(false) @map("google_sync_enabled")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_settings")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
