@@ -12,6 +12,7 @@ import { jobRouter } from "@/modules/jobs/jobs.routes.js";
 import { applicationRouter } from "@/modules/applications/applications.routes.js";
 import { resumeRouter } from "@/modules/resumes/resumes.routes.js";
 import { coverLetterRouter } from "@/modules/cover-letters/cover-letters.routes.js";
+import { taskRouter } from "@/modules/tasks/tasks.routes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/v1/jobs", jobRouter);
 app.use("/api/v1/applications", applicationRouter);
 app.use("/api/v1/resumes", resumeRouter);
 app.use("/api/v1/cover-letters", coverLetterRouter);
+app.use("/api/v1/tasks", taskRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: "Not found" });
