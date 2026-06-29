@@ -9,6 +9,7 @@ import { authLimiter } from "@/middleware/rate-limiter.js";
 import { healthRouter } from "@/modules/health/health.routes.js";
 import { authRouter } from "@/modules/auth/auth.routes.js";
 import { jobRouter } from "@/modules/jobs/jobs.routes.js";
+import { applicationRouter } from "@/modules/applications/applications.routes.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use((req, _res, next) => {
 app.use("/health", healthRouter);
 app.use("/api/v1/auth", authLimiter, authRouter);
 app.use("/api/v1/jobs", jobRouter);
+app.use("/api/v1/applications", applicationRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: "Not found" });
