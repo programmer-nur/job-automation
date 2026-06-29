@@ -1,3 +1,4 @@
+import "express-async-errors";
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
@@ -7,6 +8,7 @@ import { errorHandler } from "@/middleware/error-handler.js";
 import { authLimiter } from "@/middleware/rate-limiter.js";
 import { healthRouter } from "@/modules/health/health.routes.js";
 import { authRouter } from "@/modules/auth/auth.routes.js";
+import { jobRouter } from "@/modules/jobs/jobs.routes.js";
 
 const app = express();
 
@@ -20,6 +22,7 @@ app.use((req, _res, next) => {
 
 app.use("/health", healthRouter);
 app.use("/api/v1/auth", authLimiter, authRouter);
+app.use("/api/v1/jobs", jobRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: "Not found" });
