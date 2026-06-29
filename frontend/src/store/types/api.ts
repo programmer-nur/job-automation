@@ -38,26 +38,17 @@ export interface QueryParams extends PaginationParams {
 }
 
 export type JobStatus =
-  | "SAVED"
+  | "NEW"
+  | "REVIEWING"
   | "READY_TO_APPLY"
   | "APPLIED"
-  | "INTERVIEWING"
+  | "FOLLOW_UP"
+  | "INTERVIEW"
   | "OFFER"
   | "REJECTED"
-  | "WITHDRAWN"
-  | "ARCHIVED";
+  | "CLOSED";
 
-export type ApplicationStatus =
-  | "DRAFT"
-  | "SUBMITTED"
-  | "SCREENING"
-  | "INTERVIEWING"
-  | "OFFER"
-  | "REJECTED"
-  | "WITHDRAWN"
-  | "ACCEPTED";
-
-export type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export type Priority = "LOW" | "MEDIUM" | "HIGH";
 
 export type TaskStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
@@ -83,33 +74,48 @@ export interface LoginResponse {
 
 export interface Job {
   id: string;
-  userId: string;
-  title: string;
+  role: string;
   company: string;
-  location?: string;
-  description?: string;
-  url?: string;
-  salary?: string;
+  location: string | null;
+  employmentType: string | null;
+  workplaceType: string | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  currency: string | null;
+  source: string | null;
+  jobUrl: string | null;
+  description: string | null;
+  requirements: string | null;
+  benefits: string | null;
+  experienceRequired: string | null;
+  education: string | null;
+  matchScore: number | null;
   status: JobStatus;
   priority: Priority;
   isFavorite: boolean;
-  matchScore?: number;
-  source?: string;
-  metadata?: Record<string, unknown>;
+  notes: string | null;
+  skills: Array<{ id: string; skill: string; category: string | null }>;
   createdAt: string;
   updatedAt: string;
-  deletedAt?: string;
 }
 
 export interface CreateJobInput {
-  title: string;
+  role: string;
   company: string;
   location?: string;
+  employmentType?: string;
+  workplaceType?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  currency?: string;
+  source?: string;
+  jobUrl?: string;
   description?: string;
-  url?: string;
-  salary?: string;
-  status?: JobStatus;
-  priority?: Priority;
+  requirements?: string;
+  benefits?: string;
+  experienceRequired?: string;
+  education?: string;
+  notes?: string;
 }
 
 export interface ImportJobInput {
@@ -117,50 +123,47 @@ export interface ImportJobInput {
   data: Record<string, unknown>;
 }
 
+export interface JobSummary {
+  id: string;
+  title: string;
+  company: string;
+  location: string | null;
+}
+
 export interface Application {
   id: string;
   jobId: string;
-  userId: string;
-  status: ApplicationStatus;
-  appliedDate?: string;
-  followUpDate?: string;
-  notes?: string;
-  metadata?: Record<string, unknown>;
+  status: JobStatus;
+  notes: string | null;
+  appliedAt: string | null;
+  followUpDate: string | null;
   createdAt: string;
   updatedAt: string;
-  deletedAt?: string;
+  job: JobSummary;
 }
 
 export interface CreateApplicationInput {
   jobId: string;
-  status?: ApplicationStatus;
-  appliedDate?: string;
   notes?: string;
 }
 
 export interface Resume {
   id: string;
-  userId: string;
-  fileName: string;
-  fileUrl: string;
+  name: string;
+  targetRole: string | null;
+  storageUrl: string | null;
+  atsScore: number | null;
   isDefault: boolean;
-  version: number;
-  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
-  deletedAt?: string;
 }
 
 export interface CoverLetter {
   id: string;
-  userId: string;
-  applicationId?: string;
-  jobId?: string;
-  content: string;
-  metadata?: Record<string, unknown>;
+  jobId: string | null;
+  content: string | null;
+  storageUrl: string | null;
   createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
 }
 
 export interface Task {
@@ -200,10 +203,14 @@ export interface Notification {
 
 export interface DashboardSummary {
   totalJobs: number;
-  applications: number;
+  totalApplications: number;
+  activeApplications: number;
   interviews: number;
   offers: number;
   rejections: number;
+  pendingTasks: number;
+  unreadNotifications: number;
+  activeResumes: number;
 }
 
 export interface MonthlyAnalytics {

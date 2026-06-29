@@ -41,7 +41,7 @@ export const resumesApi = api.injectEndpoints({
 
     updateResume: builder.mutation<
       ApiResponse<Resume>,
-      { id: string; data: Partial<{ fileName: string }> }
+      { id: string; data: Partial<{ name: string; targetRole: string; storageUrl: string }> }
     >({
       query: ({ id, data }) => ({
         url: `/resumes/${id}`,

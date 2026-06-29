@@ -1,4 +1,4 @@
-import type { Application } from "@prisma/client";
+import type { Application, Job } from "@prisma/client";
 
 export interface CreateApplicationInput {
   jobId: string;
@@ -18,6 +18,13 @@ export interface ApplicationListParams {
   sortOrder?: "asc" | "desc";
 }
 
+export interface JobSummary {
+  id: string;
+  title: string;
+  company: string;
+  location: string | null;
+}
+
 export interface ApplicationResponse {
   id: string;
   jobId: string;
@@ -27,9 +34,12 @@ export interface ApplicationResponse {
   followUpDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  job: JobSummary;
 }
 
-export function toApplicationResponse(app: Application): ApplicationResponse {
+type ApplicationWithJob = Application & { job: Pick<Job, "id" | "title" | "company" | "location"> };
+
+export function toApplicationResponse(app: ApplicationWithJob): ApplicationResponse {
   return {
     id: app.id,
     jobId: app.jobId,
@@ -39,5 +49,11 @@ export function toApplicationResponse(app: Application): ApplicationResponse {
     followUpDate: app.followUpDate,
     createdAt: app.createdAt,
     updatedAt: app.updatedAt,
+    job: {
+      id: app.job.id,
+      title: app.job.title,
+      company: app.job.company,
+      location: app.job.location,
+    },
   };
 }

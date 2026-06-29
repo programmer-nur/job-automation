@@ -38,6 +38,7 @@ function makeApplication(overrides = {}) {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
+    job: { id: jobId, title: "Software Engineer", company: "Acme Inc", location: "Remote" },
     ...overrides,
   };
 }
