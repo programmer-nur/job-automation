@@ -14,6 +14,7 @@ import { resumeRouter } from "@/modules/resumes/resumes.routes.js";
 import { coverLetterRouter } from "@/modules/cover-letters/cover-letters.routes.js";
 import { taskRouter } from "@/modules/tasks/tasks.routes.js";
 import { notificationRouter } from "@/modules/notifications/notifications.routes.js";
+import { dashboardRouter } from "@/modules/dashboard/dashboard.routes.js";
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/v1/resumes", resumeRouter);
 app.use("/api/v1/cover-letters", coverLetterRouter);
 app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: "Not found" });
